@@ -1,0 +1,65 @@
+import discord
+from discord.ext import commands
+import random
+import asyncio  # Günlük bilgi paylaşımı için gerekli
+from datetime import timedelta
+
+TOKEN = ""
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+bilgiler = [
+    "Her yıl yaklaşık 8 milyon ton plastik atık okyanuslara karışıyor. Bu, deniz canlılarına büyük zarar veriyor.",
+    "Hava kirliliği, her yıl dünya genelinde milyonlarca erken ölüme neden oluyor.",
+    "Su kaynaklarının kirlenmesi, içme suyu sıkıntısına yol açabilir.",
+]
+
+tavsiyeler = [
+    "Plastik atıkları azaltmak için kendi su şişenizi ve çantanızı kullanın.",
+    "Doğaya zarar vermemek için çöpleri geri dönüşüm kutularına atın.",
+    "Kağıt tüketimini azaltmak için dijital notlar almayı tercih edin.",
+]
+
+@bot.event
+async def on_ready():
+    print(f'{bot.user} çevrimiçi ve hazır!')
+    bot.loop.create_task(gunluk_bilgi_paylasimi())  # Günlük bilgi paylaşımı görevini başlat
+
+
+@bot.command()
+async def bilgi(ctx):
+    bilgi = random.choice(bilgiler)
+    await ctx.send(f'🌍 Çevre Bilgisi: {bilgi}')
+
+
+@bot.command()
+async def tavsiye(ctx):
+    tavsiye = random.choice(tavsiyeler)
+    await ctx.send(f'💡 Çevre Tavsiyesi: {tavsiye}')
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send('Bu geçerli bir komut değil! Kullanabileceğiniz komutlar: `!bilgi`, `!tavsiye`')
+
+
+# Günlük bilgi paylaşımı döngüsü
+async def gunluk_bilgi_paylasimi():
+    await bot.wait_until_ready()
+    kanal_id = 1301985338197016590  # Verilen kanal ID'si
+
+    while not bot.is_closed():
+        now = (discord.utils.utcnow() + timedelta(hours=3)).time()  # Türkiye saatine göre UTC+3
+
+        # Test için şu anki saat ve dakikayı kontrol ediyoruz
+        if now.hour == 22 and now.minute == 15:  # Şu anki saat/dakikayı ayarlayın
+            kanal = bot.get_channel(kanal_id)
+            if kanal:
+                bilgi = random.choice(bilgiler)
+                await kanal.send(f'🌍 Günün Çevre Bilgisi: {bilgi}')
+            await asyncio.sleep(60)  # Test sonrası tekrar etmemesi için 1 dakika bekler
+        await asyncio.sleep(1)
+
+bot.run(TOKEN)
